@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Skully</title>
+	<style>
+		{0}
+	</style>
+</head>
+<body>
+	<script src="index.js"></script>
+	<h1>Skully</h1>
+	<hr>
+	<label for="brightness">Helligkeit:</label>
+	<form accept-charset="utf-8" action="/" method="POST">
+		<div class="brightness_button_container">
+			<button value="0" class="brightness_button_off" id="brightness" name="brightness">OFF</button>
+			<button value="{3}" class="brightness_button_on" id="brightness" name="brightness">ON</button>
+		</div>
+	</form>
+	<form accept-charset="utf-8" action="/" method="POST">
+		<input type="range" min="0" max="100" value="{2}" class="slider" id="brightness" name="brightness" onmouseup="this.form.submit();" ontouchend="this.form.submit();">
+	</form>
+	<hr>
+	<div class="modes_flex_container">
+		{1}
+	</div>
+	<hr>
+	<p>
+		<a href="https://www.github.com/zauberwild/Skully">GitHub</a>
+		&nbsp;•&nbsp;
+		Icons from <a href="https://pictogrammers.com/library/mdi/">Pictogrammers</a>
+	</p>
+</body>
+</html>

@@ -1,0 +1,14 @@
+Adafruit CircuitPython 8.0.3 on 2023-02-23; Raspberry Pi Pico W with rp2040
+Board ID:raspberry_pi_pico_w
+UID:E6616408435B712E
+MAC:28:CD:C1:08:0F:E7
+boot.py Ausgabe:
+board.GP1 True
+board.GP2 True
+board.GP5 True
+board.GP6 True
+board.GP9 True
+board.GP10 True
+board.GP13 True
+board.GP14 False
+readonly = True
