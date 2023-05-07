@@ -320,10 +320,14 @@ start_time = time.monotonic() * 1000
 def get_millis():
     return time.monotonic() * 1000 - start_time
 
-smartphone_ping_last_update_time = 0    # timing things, to ping at an interval
-smartphone_ping_update_every = 1000*60 # ms
+
+smartphone_ping_last_update_time = 0  # timing things, to ping at an interval
+smartphone_ping_update_every = 1000 * 60  # ms
 smartphone_ping_last_found = 0  # the last time the smartphone was found
-smartphone_ping_timeout = 1000*60*10  # [ms], the time it takes for the LEDs to turn off
+smartphone_ping_timeout = (
+    1000 * 60 * 10
+)  # [ms], the time it takes for the LEDs to turn off
+off_because_smartphone = False
 
 last_update_time = 0
 updates_every = 30  # ms
@@ -421,26 +425,30 @@ while True:
     # ping my smartphone
 
     if enable_smartphone_search:
-        if smartphone_ping_last_update_time + smartphone_ping_update_every <= get_millis():
+        if (
+            smartphone_ping_last_update_time + smartphone_ping_update_every
+            <= get_millis()
+        ):
             smartphone_ping_last_update_time = get_millis()
             try:
-                ans = (wifi.radio.ping(ip_of_smartphone) * 1000)
-                if(type(ans) == float):
+                ans = wifi.radio.ping(ip_of_smartphone) * 1000
+                if type(ans) == float:
                     # print("smartphones there!")
-                    if (led.get_brightness() == 0):
+                    if led.get_brightness() == 0 and off_because_smartphone:
                         print("📱 smartphone back, turning back on!")
                         led.restore_brightness()
+                        off_because_smartphone = False
                     smartphone_ping_last_found = get_millis()
             except TypeError as t:
                 # print(t)
                 # print("smartphones NOT there!")
                 pass
 
-            if(smartphone_ping_last_found+ smartphone_ping_timeout < get_millis()):
-                if(led.get_brightness() > 0):
+            if smartphone_ping_last_found + smartphone_ping_timeout < get_millis():
+                if led.get_brightness() > 0:
                     print("📱 Smartphone gone for too long, turning off!")
                     led.set_brightness(0)
-
+                    off_because_smartphone = True
 
     # update cong
     sto.update(led_builtin, cur_mode, modes)
