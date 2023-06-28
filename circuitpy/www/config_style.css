@@ -6,31 +6,31 @@ body {
 	background-color: black;
 	color: white;
 }
-
 svg {
 	margin: 0;
 	float: left;
 	height: 48px;
 }
-
+img {
+	margin: 0;
+	float: left;
+	height: 48px;
+}
 button {
 	border: none;
 	background-color: #333;
 	color: white;
 	border-radius: 3px;
 }
-
 button:hover {
 	background-color: #5f5f5f;
 }
-
 #title {
 	margin: 0;
 	vertical-align: middle;
 	overflow: hidden;
 	padding-left: 5px;
 }
-
 .el_color_picker,
 .el_radio_buttons,
 .el_slider {
@@ -39,13 +39,11 @@ button:hover {
 	padding: 5px;
 	border-radius: 7px;
 }
-
 .colors_flex_container {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-around;
 }
-
 .color_buttons, .color_buttons_selected {
 	flex: 1;
 	min-width: 48px;
@@ -54,16 +52,12 @@ button:hover {
 	overflow: hidden;
 	border-radius: 7px;
 }
-
 .color_buttons {
 	border: 2px solid #ffffff00;
 }
-
 .color_buttons_selected {
 	border: 2px solid white;
-	/* border-style: inset; */
 }
-
 .hue_slider {
 	width: 100%;
 	height: 25px;
@@ -85,7 +79,6 @@ button:hover {
 			hsl(330, 100%, 50%),
 			hsl(360, 100%, 50%));
 }
-
 .hue_slider::-webkit-slider-thumb,
 .hue_slider::-moz-range-thumb {
 	-webkit-appearance: none;
@@ -97,20 +90,15 @@ button:hover {
 	cursor: pointer;
 	border-radius: 50%;
 }
-
 .slider {
 	width: 100%;
 }
-
 .radio_button {
 	font-size: 2rem;
 	line-height: 1.1;
-	/* display: grid; */
 	grid-template-columns: 1em auto;
 	gap: 0.5em;
 }
-
 .value_overview {
 	color: #5f5f5f;
-	/* border: 2px solid red; */
 }
