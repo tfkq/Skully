@@ -2,6 +2,7 @@ import modes.super_mode as super_mode
 import elements
 import led
 import math
+from storage_management import *
 
 # * my name is giovanni gorgio, but everybody calls me gorgio
 
@@ -68,7 +69,7 @@ class RAM(super_mode.SuperMode):
                 self.values[i] = 100
         elif self.animation == "breath":
             light = (0.45*math.cos(counter/self.speed_breath)) + 0.55
-            # print(counter, light)
+            # log(counter, light)
             for i in range(50):
                 self.values[i] = light
         elif self.animation == "wave":

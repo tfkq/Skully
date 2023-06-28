@@ -2,7 +2,7 @@ import elements
 import modes.super_mode as super_mode
 import led
 import math
-
+from storage_management import *
 
 #* UNICORN VOMIT
 
@@ -39,10 +39,10 @@ class Einhornkotze(super_mode.SuperMode):
 
     def update(self, counter):
         if self.animation == "breath":
-            # print(self.grb1, self.grb2, led.vector_lerp(self.grb1, self.grb2, 0.5))
+            # log(self.grb1, self.grb2, led.vector_lerp(self.grb1, self.grb2, 0.5))
             val = 180 * math.cos(counter/self.speed_breath) + 180
             led.fill(led.hsv_to_grb(val))
-            # print(led.vector_lerp(self.grb1, self.grb2, counter/self.speed_breath))
+            # log(led.vector_lerp(self.grb1, self.grb2, counter/self.speed_breath))
         elif self.animation == "wave":
             for i in range(50):
                 val = 180 * math.cos((counter-i*(2*math.pi*self.speed_wave/50))/self.speed_wave) + 180

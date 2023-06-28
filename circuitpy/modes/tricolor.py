@@ -2,6 +2,7 @@ import elements
 import modes.super_mode as super_mode
 import led
 import math
+from storage_management import *
 
 # * https://www.youtube.com/watch?v=0F1PrMyvjWc
 
@@ -50,10 +51,10 @@ class TriColor(super_mode.SuperMode):
 
     def update(self, counter):
         if self.animation == "breath":
-            # print(self.grb1, self.grb2, led.vector_lerp(self.grb1, self.grb2, 0.5))
+            # log(self.grb1, self.grb2, led.vector_lerp(self.grb1, self.grb2, 0.5))
             val = 0.5 * math.cos(counter/self.speed_breath) + 0.5
             led.fill(led.vector_tri_lerp(self.grb1, self.grb2, self.grb3, val))
-            # print(led.vector_lerp(self.grb1, self.grb2, counter/self.speed_breath))
+            # log(led.vector_lerp(self.grb1, self.grb2, counter/self.speed_breath))
         elif self.animation == "wave":
             for i in range(50):
                 val = 0.5 * math.cos((counter-i*(2*math.pi*self.speed_wave/50))/self.speed_wave) + 0.5

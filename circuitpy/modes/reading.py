@@ -3,6 +3,7 @@ import modes.super_mode as super_mode
 import led
 import math
 import random
+from storage_management import *
 
 #* 
 
@@ -69,7 +70,7 @@ class Reading(super_mode.SuperMode):
             self.color_values = (self.g, self.r, self.b)
 
         hsv = led.grb_to_hsv(self.color_values)
-        # print(self.col_values, hsv)
+        # log(self.col_values, hsv)
         hsv[2] = hsv[2]/1.5
         self.leds_hsv = [hsv]*50
 

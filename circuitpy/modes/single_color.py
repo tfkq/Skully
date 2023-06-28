@@ -2,7 +2,7 @@ import elements
 import modes.super_mode as super_mode
 import led
 import math
-
+from storage_management import *
 
 class SingleColor(super_mode.SuperMode):
 
@@ -39,7 +39,7 @@ class SingleColor(super_mode.SuperMode):
 				led.set_led(i, self.hue)
 		elif self.animation == "breath":
 			light = (45*math.cos(counter/self.speed_breath)) + 55
-			# print(counter, light)
+			# log(counter, light)
 			for i in range(50):
 				led.set_led(i, self.hue, light)
 		elif self.animation == "wave":
