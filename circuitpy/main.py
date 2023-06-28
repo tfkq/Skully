@@ -16,6 +16,7 @@ from adafruit_httpserver.methods import HTTPMethod
 from adafruit_httpserver.mime_type import MIMEType
 
 import storage_management as sto
+from storage_management import *
 import led
 
 # import modes.super_mode as super_mode
@@ -25,7 +26,6 @@ import modes.fire as fire
 import modes.ram as ram
 import modes.reading as reading
 import modes.single_color as single_color
-
 # import modes.snow as snow
 import modes.stars as stars
 import modes.tricolor as tricolor
@@ -63,40 +63,41 @@ def next_mode():
     cur_mode += 1
     if cur_mode >= len(modes):
         cur_mode = 0
-    print("NEW MODE: ", cur_mode, modes[cur_mode].title)
+    log("NEW MODE: ", cur_mode, modes[cur_mode].title)
 
 
 def reading_mode():
     global cur_mode
     for idx, mode in enumerate(modes):
         if mode.id == "read":
-            print("NEW MODE: ", idx, mode.title)
+            log("NEW MODE: ", idx, mode.title)
             cur_mode = idx
             break
 
 
 # * SETUP - WIFI/SERVER
-print()
-print("Connecting to WiFi")
+log()
+log("Connecting to WiFi")
 #  connect to your SSID
 wifi.radio.connect(
     os.getenv("CIRCUITPY_WIFI_SSID"), os.getenv("CIRCUITPY_WIFI_PASSWORD")
 )
-print("Connected to WiFi")
+log("Connected to WiFi")
 pool = socketpool.SocketPool(wifi.radio)
 #  prints MAC address to REPL
-print("My MAC addr:", [hex(i) for i in wifi.radio.mac_address])
+log("My MAC addr:", [hex(i) for i in wifi.radio.mac_address])
 #  prints IP address to REPL
-print("My IP address is", wifi.radio.ipv4_address)
+log("My IP address is", wifi.radio.ipv4_address)
 ip = str(wifi.radio.ipv4_address)
 #  pings Google
 ipv4_ping = ipaddress.ip_address("8.8.4.4")
-print("Ping google.com: %f ms" % (wifi.radio.ping(ipv4_ping) * 1000))
-print("starting server..")
+log("Ping google.com: %f ms" % (wifi.radio.ping(ipv4_ping) * 1000))
+log("starting server..")
 # startup the server
 pool = socketpool.SocketPool(wifi.radio)
 server = HTTPServer(pool)
 requests = adafruit_requests.Session(pool, ssl.create_default_context())
+sto.ntp_setup(pool)
 
 # * SETUP - WEBSITE
 
@@ -105,17 +106,17 @@ if not ip == ip_with_buttons:
 
 # for i in modes:
 #     i.set_html_block(html_mode_block, svg_settings_icon)
-# print("read the files")
+# log("read the files")
 
 #  route default static IP
 @server.route("/")
-def base(request: HTTPRequest):  # pylint: disable=unused-argument
+def base(request: HTTPRequest):
     global modes, cur_mode
 
     sto.request_config_save()
     gc.collect()
 
-    print("request incoming...")
+    log("request incoming...")
 
     if "action" in request.query_params:
 
@@ -153,7 +154,7 @@ def base(request: HTTPRequest):  # pylint: disable=unused-argument
         new_mode = request.query_params["mode_config"]
         for idx, mode in enumerate(modes):
             if mode.id == new_mode:
-                print("NEW MODE: ", idx, mode.title)
+                log("NEW MODE: ", idx, mode.title)
                 cur_mode = idx
                 break
 
@@ -168,16 +169,13 @@ def base(request: HTTPRequest):  # pylint: disable=unused-argument
             new_mode = request.query_params["mode_start"]
             for idx, mode in enumerate(modes):
                 if mode.id == new_mode:
-                    print("NEW MODE: ", idx, mode.title)
+                    log("NEW MODE: ", idx, mode.title)
                     cur_mode = idx
                     break
 
+        gc.collect()
+
         # TODO optimize runtime, have these files constantly in ram ?
-        css_style = ""
-        file = open("./www/style.css", "r")
-        for i in file.readlines():
-            css_style += i.strip()
-        file.close()
 
         html_index = ""
         file = open("./www/index.html", "r")
@@ -197,25 +195,89 @@ def base(request: HTTPRequest):  # pylint: disable=unused-argument
             svg_settings_icon += i.strip()
         file.close()
 
-        # gc.collect()
+        gc.collect()
 
+        #TODO split transmission into several files
         html_modes = ""
         for i in modes:
-            html_modes += i.get_html_block(html_mode_block, svg_settings_icon)
+            html_modes += i.get_html_block(html_mode_block)
 
-        #  serve the HTML f string
-        #  with content type text/html
         gc.collect()
+
+        html_index = html_index.format(
+            html_modes,
+            str(led.get_brightness()),
+            str(led.get_previous_brightness()),
+        )
+
+        #  serve the HTML string
+        #  with content type text/html
         with HTTPResponse(request, content_type=MIMEType.TYPE_HTML) as response:
-            gc.collect()
-            response.send(
-                html_index.format(
-                    css_style,
-                    html_modes,
-                    str(led.get_brightness()),
-                    str(led.get_previous_brightness()),
-                )
-            )
+            # gc.collect()
+            response.send(html_index)
+    gc.collect()
+
+@server.route("/style.css")
+def serve_css(request: HTTPRequest):
+    gc.collect()
+    css_style = ""
+    file = open("./www/style.css", "r")
+    for i in file.readlines():
+        css_style += i.strip()
+    file.close()
+    with HTTPResponse(request, content_type=MIMEType.TYPE_CSS, headers= {"Cache-Control": "max-age=3600"}) as response:
+        response.send(css_style)
+    gc.collect()
+
+@server.route("/config_style.css")
+def serve_config_css(request: HTTPRequest):
+    gc.collect()
+    css_style = ""
+    file = open("./www/config_style.css", "r")
+    for i in file.readlines():
+        css_style += i.strip()
+    file.close()
+    with HTTPResponse(request, content_type=MIMEType.TYPE_CSS, headers= {"Cache-Control": "max-age=3600"}) as response:
+        response.send(css_style)
+    gc.collect()
+
+content_source_dir = os.listdir("www/source")
+
+@server.route("/source/")
+@server.route("/source")
+def serve_sources(request: HTTPRequest):
+    # gc.collect()
+    # print("source request incoming...")
+    if "file" in request.query_params:
+        param = request.query_params["file"]
+        if param in content_source_dir:
+            source_file = ""
+            file = open("./www/source/" + param, "r")
+            for i in file.readlines():
+                source_file += i.strip()
+            file.close()
+            with HTTPResponse(request, content_type=MIMEType.TYPE_SVG, headers= {"Cache-Control": "max-age=3600"}) as response:
+                response.send(source_file)
+        else:
+            with HTTPResponse(request, content_type=MIMEType.TYPE_SVG, status = [404, "Not Found"]) as response:
+                response.send()
+    else:
+        with HTTPResponse(request, content_type=MIMEType.TYPE_HTML, status = [400, "Bad Request"]) as response:
+            response.send()
+            
+    # gc.collect()
+
+@server.route("/log")
+def serve_config_css(request: HTTPRequest):
+    gc.collect()
+    log_file = ""
+    file = open("./log", "r")
+    for i in file.readlines():
+        log_file += i.strip()
+    file.close()
+    with HTTPResponse(request, content_type=MIMEType.TYPE_HTML, headers= {"Cache-Control": "no-store"}) as response:
+        response.send(log_file)
+    gc.collect()
 
 
 @server.route("/", method=HTTPMethod.POST)
@@ -225,7 +287,7 @@ def post(request: HTTPRequest):
     sto.request_config_save()
     gc.collect()
     req = request.raw_request.decode("UTF-8")
-    # print(req)
+    # log(req)
 
     # we expect something along the lines of this:
 
@@ -250,8 +312,8 @@ def post(request: HTTPRequest):
     first_line = req.splitlines()[0]
     last_line = req.splitlines()[-1]
 
-    # print(first_line)
-    # print(last_line)
+    # log(first_line)
+    # log(last_line)
 
     # there might no "=" in the first line, because its the brightness level
     if not "=" in first_line and last_line[: last_line.find("=")] == "brightness":
@@ -263,9 +325,9 @@ def post(request: HTTPRequest):
         id = last_line[: last_line.find("=")]
         value = last_line[last_line.find("=") + 1 :]
 
-        # print("MODE: \"" + mode + "\"")
-        # print("ID:   \"" + id + "\"")
-        # print("VALUE:\"" + value + "\"")
+        # log("MODE: \"" + mode + "\"")
+        # log("ID:   \"" + id + "\"")
+        # log("VALUE:\"" + value + "\"")
 
         for i in modes:
             if i.id == mode:
@@ -276,11 +338,11 @@ def post(request: HTTPRequest):
 
 try:
     server.start(str(wifi.radio.ipv4_address))
-    print("Listening on http://%s:80" % wifi.radio.ipv4_address)
+    log("Listening on http://%s:80" % wifi.radio.ipv4_address)
 #  if the server fails to begin, restart the pico w
 except OSError:
     time.sleep(5)
-    print("restarting..")
+    log("restarting..")
     microcontroller.reset()
 ping_address = ipaddress.ip_address("8.8.4.4")
 
@@ -307,7 +369,7 @@ btn_power.direction = Direction.INPUT
 btn_power.pull = Pull.UP
 
 if ip == ip_with_buttons:
-    print("i'm the one with buttons!")
+    log("i'm the one with buttons!")
 
 led_builtin = DigitalInOut(board.LED)
 led_builtin.direction = Direction.OUTPUT
@@ -341,21 +403,21 @@ while True:
         val = btn_next.value
         if btn_next_prev_value != val:
             btn_next_prev_value = val
-            print("🟡 Next Button:", val)
+            log("🟡 Next Button:", val)
             if val == False:
                 sto.request_config_save()
                 next_mode()
         val = btn_read.value
         if btn_read_prev_value != val:
             btn_read_prev_value = val
-            print("🟡 Read Button:", val)
+            log("🟡 Read Button:", val)
             if val == False:
                 sto.request_config_save()
                 reading_mode()
         val = btn_power.value
         if btn_power_prev_value != val:
             btn_power_prev_value = val
-            print("🟡 Power Button:", val)
+            log("🟡 Power Button:", val)
             if val == False:
                 sto.request_config_save()
                 led.toggle()
@@ -371,7 +433,7 @@ while True:
                 try:
                     r = requests.get(url, timeout=10)
                 except RuntimeError:
-                    print("[ERR] couldn't reach Skully")
+                    log("[ERR] couldn't reach Skully")
 
     # * ### CHECK THE LEDS
 
@@ -395,23 +457,26 @@ while True:
 
         # Counter
         counter += 1
-        # print(counter)
+        # log(counter)
         if counter >= 1073741823:
             counter = 0
-            print("kinda-annual counter reset 🎉")
+            log("kinda-annual counter reset 🎉")
         if counter >= 2880000 and led.get_brightness() == 0:
             counter = 0
-        # print(get_millis())
+        # log(get_millis())
 
     # * ### CHECK THE SERVER AND OTHER STUFF
 
-    server.poll()
+    try:
+        server.poll()
+    except Exception as e:
+        log(e)
 
     # test connection
-    # print(wifi.radio.ipv4_address)
+    # log(wifi.radio.ipv4_address)
 
     if wifi.radio.ipv4_address == None:
-        print("internet futsch")
+        log("internet futsch")
         pass
         try:
             wifi.radio.connect(
@@ -420,7 +485,7 @@ while True:
                 timeout=10,
             )
         except ConnectionError as c:
-            print(c)
+            log(c)
 
     # ping my smartphone
 
@@ -433,20 +498,20 @@ while True:
             try:
                 ans = wifi.radio.ping(ip_of_smartphone) * 1000
                 if type(ans) == float:
-                    # print("smartphones there!")
+                    # log("smartphones there!")
                     if led.get_brightness() == 0 and off_because_smartphone:
-                        print("📱 smartphone back, turning back on!")
+                        log("📱 smartphone back, turning back on!")
                         led.restore_brightness()
                         off_because_smartphone = False
                     smartphone_ping_last_found = get_millis()
             except TypeError as t:
-                # print(t)
-                # print("smartphones NOT there!")
+                # log(t)
+                # log("smartphones NOT there!")
                 pass
 
             if smartphone_ping_last_found + smartphone_ping_timeout < get_millis():
                 if led.get_brightness() > 0:
-                    print("📱 Smartphone gone for too long, turning off!")
+                    log("📱 Smartphone gone for too long, turning off!")
                     led.set_brightness(0)
                     off_because_smartphone = True
 
@@ -454,4 +519,4 @@ while True:
     sto.update(led_builtin, cur_mode, modes)
 
     gc.collect()
-    # print(gc.mem_free())
+    # log(gc.mem_free())

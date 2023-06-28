@@ -1,16 +1,12 @@
 import elements
 import led
+from storage_management import *
 
 class SuperMode:
     def __init__(self, id="superMode", title="SuperMode", icon="sigma.svg") -> None:
         self.id = id
         self.title = title	# title of this mode
-        
-        file = open("./www/source/{0}".format(icon), "r")
-        self.icon = ""
-        for i in file.readlines():
-            self.icon += i.strip()
-        file.close()
+        self.icon = icon
         
         self.html_block = ""
         self.elements = []  # list of html-blocks on its settings page
@@ -66,8 +62,8 @@ class SuperMode:
         return html.format(css_style, self.icon, self.title, elements)
 
     # get the html block for the main page
-    def get_html_block(self, html, settings_icon) -> str:
-        return html.format(self.icon, self.title, settings_icon, self.id)
+    def get_html_block(self, html) -> str:
+        return html.format(self.icon, self.title, self.id)
     
     def get_dict(self):
 
