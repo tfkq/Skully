@@ -3,6 +3,7 @@ import board
 # from rainbowio import colorwheel
 import neopixel
 import colorsys
+from storage_management import *
 
 already_off = False
 previous_brightness = 0
@@ -21,12 +22,12 @@ def set_brightness(brightness):
         already_off = False
 
 def toggle():
-    # print("toggle")
+    # log("toggle")
     if get_brightness() == 0:
-        print("toggle - LEDs ON")
+        log("toggle - LEDs ON")
         restore_brightness()
     else:
-        print("toggle - LEDs OFF")
+        log("toggle - LEDs OFF")
         set_brightness(0)
 
 def restore_brightness():
@@ -72,7 +73,7 @@ def hsv_to_grb(hue: int, sat=100, value=100):
         return [x, x, x]
     rgb = colorsys.hsv_to_rgb(hue/360, sat/100, value/100)
     grb = [rgb[1], rgb[0], rgb[2]]
-    # print(rgb)
+    # log(rgb)
     return grb
 
 def grb_to_hsv(grb):
@@ -113,7 +114,7 @@ def off():
         already_off = True
         pixels.fill((0,0,0))
         pixels.show()
-        print("Turning off!")
+        # log("Turning off!")
 
 def set_led(led: int, hue: int, light=100):
     pixels[led] = hsv_to_grb(hue, 100, light)
