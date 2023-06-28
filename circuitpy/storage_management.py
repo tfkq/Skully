@@ -2,31 +2,59 @@ import json
 import board
 from digitalio import DigitalInOut, Direction, Pull
 import led
+import adafruit_ntp
 
-
-_allow_writing = True
+_allow_writing = False
 _request_save = False
 _last_save = 0
 COOLDOWN = 5000
 
+ntp = None
+
+#* Log
+def log(*args):
+    if _allow_writing:
+        s = "<p>"
+        if ntp != None:
+            t = ntp.datetime
+            s += "<i>[" + str(t.tm_year) + "-" + str(t.tm_mon) + "-" + str(t.tm_mday) + " " + str(t.tm_hour) + ":" + str(t.tm_min) + ":" + str(t.tm_sec) + "]</i> "
+        else:
+            s += "<i>[????-??-?? ??:??:??]</i> "
+
+        for i in args:
+            s += str(i) + " "
+        s += "</p>\n"
+        with open("/log", "a") as fp:
+            fp.write(s)
+            fp.flush()
+    
+    print(*args)
+
+
 #* SETUP
-for p in [board.GP13, board.GP14]:
-    pin = DigitalInOut(p)
-    pin.direction = Direction.INPUT
-    pin.pull = Pull.UP
-    print(pin.value)
+# for p in [board.GP13, board.GP14]:
+#     pin = DigitalInOut(p)
+#     pin.direction = Direction.INPUT
+#     pin.pull = Pull.UP
+#     log(pin.value)
 
 try:
-    print("💾 trying to write to a file")
+    log("💾 trying to write to a file")
+    _allow_writing = True
     with open("/temp", "a") as fp:
         # fp.write("a\n")
         fp.flush()
 except OSError as e:
-    print("💾 writing failed, readonly mode")
     _allow_writing = False
+    log("💾 writing failed, readonly mode")
 
 if _allow_writing:
-    print("💾 writing successful, read/write mode")
+    log("💾 writing successful, read/write mode")
+
+
+def ntp_setup(pool):
+    global ntp
+    ntp = adafruit_ntp.NTP(pool, tz_offset=0)
 
 #* METHODS
 def get_writing_allowed():
@@ -36,7 +64,7 @@ def request_config_save():
     global _request_save
     if _allow_writing:
         _request_save = True
-        print("💾 save request accepted")
+        log("💾 save request accepted")
 
 
 def update(led_builtin, cur_mode, modes):
@@ -45,7 +73,7 @@ def update(led_builtin, cur_mode, modes):
     if _request_save:
         _request_save = False
         led_builtin.value = True
-        print("💾 fulfilling save request")
+        log("💾 fulfilling save request")
 
         # create dict
         dict = {}
@@ -62,7 +90,7 @@ def update(led_builtin, cur_mode, modes):
         # and convert into json
         js = json.dumps(dict)
 
-        # print(js)
+        # log(js)
 
         # write file
         if _allow_writing:
@@ -73,18 +101,18 @@ def update(led_builtin, cur_mode, modes):
                     fp.flush()
                     fp.close()
             except Exception as e:
-                print("💾 writing failed:")
-                print(e)
+                log("writing failed:")
+                log(e)
         
         else:
-            print("💾 writing failed, not allowed!")
+            log("writing failed, not allowed!")
 
 
         led_builtin.value = False
 
 
 def load_config(modes):
-    print("💾 loading config...")
+    log("loading config...")
 
     # read the file 
 
@@ -93,8 +121,8 @@ def load_config(modes):
             cnt = fp.readlines()
             fp.close()
     except Exception as e:
-        print("💾 reading file failed:")
-        print(e)
+        log("reading file failed:")
+        log(e)
         return 0, 100
     
     js = ""
@@ -115,8 +143,12 @@ def load_config(modes):
                             i.input(k, m[k])   # and put them into the actual mode-object
 
     except Exception as e:
-        print("💾 loading config failed:")
-        print(e)
+        log("loading config failed:")
+        log(e)
         return 0, 100
 
+    print("done")
+
     return cur_mode, brightness
+
+
