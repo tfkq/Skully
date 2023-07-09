@@ -24,10 +24,10 @@ def set_brightness(brightness):
 def toggle():
     # log("toggle")
     if get_brightness() == 0:
-        log("toggle - LEDs ON")
+        # log("toggle - LEDs ON")
         restore_brightness()
     else:
-        log("toggle - LEDs OFF")
+        # log("toggle - LEDs OFF")
         set_brightness(0)
 
 def restore_brightness():

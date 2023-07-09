@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FreeFileSync XmlType="BATCH" XmlFormat="17">
+<FreeFileSync XmlType="BATCH" XmlFormat="19">
+    <Notes/>
     <Compare>
         <Variant>TimeAndSize</Variant>
         <Symlinks>Exclude</Symlinks>
@@ -38,6 +39,7 @@
     <PostSyncCommand Condition="Completion"/>
     <LogFolder/>
     <EmailNotification Condition="Always"/>
+    <GridViewType>Action</GridViewType>
     <Batch>
         <ProgressDialog Minimized="false" AutoClose="true"/>
         <ErrorDialog>Show</ErrorDialog>

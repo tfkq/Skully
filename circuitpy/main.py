@@ -515,7 +515,7 @@ while True:
                     led.set_brightness(0)
                     off_because_smartphone = True
 
-    # update cong
+    # update config
     sto.update(led_builtin, cur_mode, modes)
 
     gc.collect()
