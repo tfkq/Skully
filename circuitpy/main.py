@@ -14,6 +14,8 @@ from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.methods import HTTPMethod
 from adafruit_httpserver.mime_type import MIMEType
+# import adafruit_ntp
+
 
 import storage_management as sto
 from storage_management import *
@@ -26,6 +28,7 @@ import modes.fire as fire
 import modes.ram as ram
 import modes.reading as reading
 import modes.single_color as single_color
+
 # import modes.snow as snow
 import modes.stars as stars
 import modes.tricolor as tricolor
@@ -54,6 +57,9 @@ cur_mode = 4
 
 for i in modes:
     i.setup()
+
+crash_me = False
+reboot_me = False
 
 # * HELPER FUNCTIONS
 
@@ -108,6 +114,7 @@ if not ip == ip_with_buttons:
 #     i.set_html_block(html_mode_block, svg_settings_icon)
 # log("read the files")
 
+
 #  route default static IP
 @server.route("/")
 def base(request: HTTPRequest):
@@ -119,7 +126,6 @@ def base(request: HTTPRequest):
     log("request incoming...")
 
     if "action" in request.query_params:
-
         ok = True
 
         param = request.query_params["action"]
@@ -150,7 +156,6 @@ def base(request: HTTPRequest):
             response.send(text)
 
     elif "mode_config" in request.query_params:
-
         new_mode = request.query_params["mode_config"]
         for idx, mode in enumerate(modes):
             if mode.id == new_mode:
@@ -164,7 +169,6 @@ def base(request: HTTPRequest):
             response.send(text)
 
     else:
-
         if "mode_start" in request.query_params:
             new_mode = request.query_params["mode_start"]
             for idx, mode in enumerate(modes):
@@ -197,7 +201,7 @@ def base(request: HTTPRequest):
 
         gc.collect()
 
-        #TODO split transmission into several files
+        # TODO split transmission into several files
         html_modes = ""
         for i in modes:
             html_modes += i.get_html_block(html_mode_block)
@@ -217,6 +221,7 @@ def base(request: HTTPRequest):
             response.send(html_index)
     gc.collect()
 
+
 @server.route("/style.css")
 def serve_css(request: HTTPRequest):
     gc.collect()
@@ -225,9 +230,14 @@ def serve_css(request: HTTPRequest):
     for i in file.readlines():
         css_style += i.strip()
     file.close()
-    with HTTPResponse(request, content_type=MIMEType.TYPE_CSS, headers= {"Cache-Control": "max-age=3600"}) as response:
+    with HTTPResponse(
+        request,
+        content_type=MIMEType.TYPE_CSS,
+        headers={"Cache-Control": "max-age=3600"},
+    ) as response:
         response.send(css_style)
     gc.collect()
+
 
 @server.route("/config_style.css")
 def serve_config_css(request: HTTPRequest):
@@ -237,11 +247,17 @@ def serve_config_css(request: HTTPRequest):
     for i in file.readlines():
         css_style += i.strip()
     file.close()
-    with HTTPResponse(request, content_type=MIMEType.TYPE_CSS, headers= {"Cache-Control": "max-age=3600"}) as response:
+    with HTTPResponse(
+        request,
+        content_type=MIMEType.TYPE_CSS,
+        headers={"Cache-Control": "max-age=604800"},
+    ) as response:
         response.send(css_style)
     gc.collect()
 
+
 content_source_dir = os.listdir("www/source")
+
 
 @server.route("/source/")
 @server.route("/source")
@@ -256,16 +272,25 @@ def serve_sources(request: HTTPRequest):
             for i in file.readlines():
                 source_file += i.strip()
             file.close()
-            with HTTPResponse(request, content_type=MIMEType.TYPE_SVG, headers= {"Cache-Control": "max-age=3600"}) as response:
+            with HTTPResponse(
+                request,
+                content_type=MIMEType.TYPE_SVG,
+                headers={"Cache-Control": "max-age=604800"},
+            ) as response:
                 response.send(source_file)
         else:
-            with HTTPResponse(request, content_type=MIMEType.TYPE_SVG, status = [404, "Not Found"]) as response:
+            with HTTPResponse(
+                request, content_type=MIMEType.TYPE_SVG, status=[404, "Not Found"]
+            ) as response:
                 response.send()
     else:
-        with HTTPResponse(request, content_type=MIMEType.TYPE_HTML, status = [400, "Bad Request"]) as response:
+        with HTTPResponse(
+            request, content_type=MIMEType.TYPE_HTML, status=[400, "Bad Request"]
+        ) as response:
             response.send()
-            
+
     # gc.collect()
+
 
 @server.route("/log")
 def serve_config_css(request: HTTPRequest):
@@ -275,10 +300,33 @@ def serve_config_css(request: HTTPRequest):
     for i in file.readlines():
         log_file += i.strip()
     file.close()
-    with HTTPResponse(request, content_type=MIMEType.TYPE_HTML, headers= {"Cache-Control": "no-store"}) as response:
+    with HTTPResponse(
+        request, content_type=MIMEType.TYPE_HTML, headers={"Cache-Control": "no-store"}
+    ) as response:
         response.send(log_file)
     gc.collect()
 
+
+@server.route("/crash")
+def crash(request: HTTPRequest):
+    global crash_me
+    crash_me = True
+    with HTTPResponse(
+        request, content_type=MIMEType.TYPE_HTML, headers={"Cache-Control": "no-store"}
+    ) as response:
+        response.send("hehe yeah boy")
+    gc.collect()
+
+@server.route("/reboot")
+def reboot_request(request: HTTPRequest):
+    global reboot_me
+    reboot_me = True
+    with HTTPResponse(
+        request, content_type=MIMEType.TYPE_HTML, headers={"Cache-Control": "no-store"}
+    ) as response:
+        response.send("I'll see you on the other side...")
+    log("❌ going to reboot (request)")
+    gc.collect()
 
 @server.route("/", method=HTTPMethod.POST)
 def post(request: HTTPRequest):
@@ -395,128 +443,148 @@ last_update_time = 0
 updates_every = 30  # ms
 counter = 0
 
-while True:
+try:
+    while True:
+        # * ### CHECK THE BUTTONS
 
-    # * ### CHECK THE BUTTONS
+        if ip == ip_with_buttons:
+            val = btn_next.value
+            if btn_next_prev_value != val:
+                btn_next_prev_value = val
+                log("🟡 Next Button:", val)
+                if val == False:
+                    sto.request_config_save()
+                    next_mode()
+            val = btn_read.value
+            if btn_read_prev_value != val:
+                btn_read_prev_value = val
+                log("🟡 Read Button:", val)
+                if val == False:
+                    sto.request_config_save()
+                    reading_mode()
+            val = btn_power.value
+            if btn_power_prev_value != val:
+                btn_power_prev_value = val
+                log("🟡 Power Button:", val)
+                if val == False:
+                    sto.request_config_save()
+                    led.toggle()
+                    if led.get_brightness() != 0:
+                        modes[cur_mode].update(counter)
+                    else:
+                        led.off()
+                    url = "http://" + ip_without_buttons + "/?action=toggle_power_"
+                    if led.get_brightness() == 0:
+                        url += "0"
+                    else:
+                        url += "1"
+                    try:
+                        r = requests.get(url, timeout=10)
+                    except RuntimeError:
+                        log("[ERR] couldn't reach Skully")
 
-    if ip == ip_with_buttons:
-        val = btn_next.value
-        if btn_next_prev_value != val:
-            btn_next_prev_value = val
-            log("🟡 Next Button:", val)
-            if val == False:
-                sto.request_config_save()
-                next_mode()
-        val = btn_read.value
-        if btn_read_prev_value != val:
-            btn_read_prev_value = val
-            log("🟡 Read Button:", val)
-            if val == False:
-                sto.request_config_save()
-                reading_mode()
-        val = btn_power.value
-        if btn_power_prev_value != val:
-            btn_power_prev_value = val
-            log("🟡 Power Button:", val)
-            if val == False:
-                sto.request_config_save()
-                led.toggle()
-                if led.get_brightness() != 0:
-                    modes[cur_mode].update(counter)
+        # * ### CHECK THE LEDS
+
+        if last_update_time + updates_every <= get_millis():
+            last_update_time = get_millis()
+
+            # Neopixels
+            if led.get_brightness() != 0:
+                modes[cur_mode].update(counter)
+            else:
+                led.off()
+
+            # Read/Write Status
+            if not sto.get_writing_allowed():
+                if counter % 10 < 5:
+                    led_builtin.value = True
                 else:
-                    led.off()
-                url = "http://" + ip_without_buttons + "/?action=toggle_power_"
-                if led.get_brightness() == 0:
-                    url += "0"
-                else:
-                    url += "1"
-                try:
-                    r = requests.get(url, timeout=10)
-                except RuntimeError:
-                    log("[ERR] couldn't reach Skully")
-
-    # * ### CHECK THE LEDS
-
-    if last_update_time + updates_every <= get_millis():
-        last_update_time = get_millis()
-
-        # Neopixels
-        if led.get_brightness() != 0:
-            modes[cur_mode].update(counter)
-        else:
-            led.off()
-
-        # Read/Write Status
-        if not sto.get_writing_allowed():
-            if counter % 10 < 5:
-                led_builtin.value = True
+                    led_builtin.value = False
             else:
                 led_builtin.value = False
-        else:
-            led_builtin.value = False
 
-        # Counter
-        counter += 1
-        # log(counter)
-        if counter >= 1073741823:
-            counter = 0
-            log("kinda-annual counter reset 🎉")
-        if counter >= 2880000 and led.get_brightness() == 0:
-            counter = 0
-        # log(get_millis())
+            # Counter
+            counter += 1
+            # log(counter)
+            if counter >= 1073741823:
+                counter = 0
+                log("kinda-annual counter reset 🎉")
+            if counter >= 2880000 and led.get_brightness() == 0:
+                counter = 0
+            # log(get_millis())
 
-    # * ### CHECK THE SERVER AND OTHER STUFF
+        # * ### CHECK THE SERVER AND OTHER STUFF
 
-    try:
-        server.poll()
-    except Exception as e:
-        log(e)
-
-    # test connection
-    # log(wifi.radio.ipv4_address)
-
-    if wifi.radio.ipv4_address == None:
-        log("internet futsch")
-        pass
         try:
-            wifi.radio.connect(
-                os.getenv("CIRCUITPY_WIFI_SSID"),
-                os.getenv("CIRCUITPY_WIFI_PASSWORD"),
-                timeout=10,
-            )
-        except ConnectionError as c:
-            log(c)
+            server.poll()
+        except Exception as e:
+            log(e)
 
-    # ping my smartphone
+        # test connection
+        # log(wifi.radio.ipv4_address)
 
-    if enable_smartphone_search:
-        if (
-            smartphone_ping_last_update_time + smartphone_ping_update_every
-            <= get_millis()
-        ):
-            smartphone_ping_last_update_time = get_millis()
+        if wifi.radio.ipv4_address == None:
+            log("internet futsch")
+            pass
             try:
-                ans = wifi.radio.ping(ip_of_smartphone) * 1000
-                if type(ans) == float:
-                    # log("smartphones there!")
-                    if led.get_brightness() == 0 and off_because_smartphone:
-                        log("📱 smartphone back, turning back on!")
-                        led.restore_brightness()
-                        off_because_smartphone = False
-                    smartphone_ping_last_found = get_millis()
-            except TypeError as t:
-                # log(t)
-                # log("smartphones NOT there!")
-                pass
+                wifi.radio.connect(
+                    os.getenv("CIRCUITPY_WIFI_SSID"),
+                    os.getenv("CIRCUITPY_WIFI_PASSWORD"),
+                    timeout=10,
+                )
+            except ConnectionError as c:
+                log(c)
 
-            if smartphone_ping_last_found + smartphone_ping_timeout < get_millis():
-                if led.get_brightness() > 0:
-                    log("📱 Smartphone gone for too long, turning off!")
-                    led.set_brightness(0)
-                    off_because_smartphone = True
+        # ping my smartphone
 
-    # update config
-    sto.update(led_builtin, cur_mode, modes)
+        if enable_smartphone_search:
+            if (
+                smartphone_ping_last_update_time + smartphone_ping_update_every
+                <= get_millis()
+            ):
+                smartphone_ping_last_update_time = get_millis()
+                try:
+                    ans = wifi.radio.ping(ip_of_smartphone) * 1000
+                    if type(ans) == float:
+                        # log("smartphones there!")
+                        if led.get_brightness() == 0 and off_because_smartphone:
+                            log("📱 smartphone back, turning back on!")
+                            led.restore_brightness()
+                            off_because_smartphone = False
+                        smartphone_ping_last_found = get_millis()
+                except TypeError as t:
+                    # log(t)
+                    # log("smartphones NOT there!")
+                    pass
 
-    gc.collect()
-    # log(gc.mem_free())
+                if smartphone_ping_last_found + smartphone_ping_timeout < get_millis():
+                    if led.get_brightness() > 0:
+                        log("📱 Smartphone gone for too long, turning off!")
+                        led.set_brightness(0)
+                        off_because_smartphone = True
+
+        if crash_me:
+            s = "a"
+            i = 1
+            while True:
+                print(i)
+                i = i + 1
+                s = s + s
+
+        if get_millis() > 1000*60*60*24 and led.get_brightness() == 0:
+            reboot_me = True
+            log("❌ going to reboot (timeout)")
+
+        if reboot_me:
+            log("❌ rebooting now...")
+            microcontroller.reset()
+
+        # update config
+        sto.update(led_builtin, cur_mode, modes)
+
+        # print(gc.mem_free())
+        gc.collect()
+
+except Exception as e:
+    log(e)
+    log("Exiting...")

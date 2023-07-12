@@ -24,6 +24,9 @@
             <Item>*\settings.toml</Item>
             <Item>*\internal</Item>
             <Item>*\temp</Item>
+            <Item>temp</Item>
+            <Item>log</Item>
+            <Item>boot_out.txt</Item>
         </Exclude>
         <SizeMin Unit="None">0</SizeMin>
         <SizeMax Unit="None">0</SizeMax>
