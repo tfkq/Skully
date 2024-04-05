@@ -1,4 +1,16 @@
 {
 	"python.formatting.provider": "black",
-	"python.analysis.typeCheckingMode": "off"
+	"python.analysis.typeCheckingMode": "off",
+	"python.languageServer": "Pylance",
+	"python.analysis.diagnosticSeverityOverrides": {
+		"reportMissingModuleSource": "none"
+	},
+	"python.analysis.extraPaths": [
+		"c:\\Users\\arvid\\.vscode\\extensions\\joedevivo.vscode-circuitpython-0.1.19-win32-x64\\boards\\0x239A\\0x8120",
+		"c:\\Users\\arvid\\.vscode\\extensions\\joedevivo.vscode-circuitpython-0.1.19-win32-x64\\stubs",
+		"c:\\Users\\arvid\\AppData\\Roaming\\Code\\User\\globalStorage\\joedevivo.vscode-circuitpython\\bundle\\20240402\\adafruit-circuitpython-bundle-py-20240402\\lib"
+	],
+	"circuitpython.board.version": "8.0.3",
+	"circuitpython.board.vid": "0x239A",
+	"circuitpython.board.pid": "0x8120"
 }

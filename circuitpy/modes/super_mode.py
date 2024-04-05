@@ -12,6 +12,7 @@ class SuperMode:
         self.elements = []  # list of html-blocks on its settings page
 
     def setup(self):
+        gc.collect()
         self.elements.append(elements.ColorPicker(self.id, "col", "Farbe", 0 , [0,60,120,180,240, 42,43,44,45,46,74,48,49,50]))
         self.elements.append(elements.ColorPicker(self.id, "col2", "Farbe2", 0 , [0,60,120,180,240]))
         self.elements.append(elements.ColorPicker(self.id, "col3", "Farbe3", 0))
@@ -43,6 +44,7 @@ class SuperMode:
 
     # get the html for its own settings page
     def get_html_config(self) -> str:
+        gc.collect()
         html = ""
         file = open("./www/mode_config.html", "r")
         for i in file.readlines():
@@ -63,6 +65,7 @@ class SuperMode:
 
     # get the html block for the main page
     def get_html_block(self, html) -> str:
+        gc.collect()
         return html.format(self.icon, self.title, self.id)
     
     def get_dict(self):

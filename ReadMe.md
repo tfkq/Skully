@@ -54,7 +54,7 @@ To change the mode/settings, open the IP-address in your browser.
 
 ## Code Structure
 
-*there isn't one. it's quite a hot mess*
+*there isn't one. it's quite a mess*
 
 
 
@@ -145,6 +145,7 @@ Saves the webpages. `{x}` (with `x` $\in \mathbb{N}$) will be replaced with the 
 ## Credits
 
 - Icons from [Pictogrammers](https://pictogrammers.com/library/mdi/)
+- <a href="https://www.freepik.com/free-vector/ornamental-borders-collection_1188383.htm#query=ornament%20svg&position=26&from_view=keyword&track=ais">Image by alvaro_cabrera</a> on Freepik
 
 
 

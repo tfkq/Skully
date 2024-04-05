@@ -1,45 +1,38 @@
-import gc
-import os
-import ipaddress
-import wifi
-import socketpool
-import time
-import microcontroller
-import board
-from digitalio import DigitalInOut, Direction, Pull
-import ssl
 import adafruit_requests
 from adafruit_httpserver.server import HTTPServer
 from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.methods import HTTPMethod
 from adafruit_httpserver.mime_type import MIMEType
-# import adafruit_ntp
-
-
+import wifi
+import socketpool
+import ssl
+import gc
+import os
+import ipaddress
+import time
+import microcontroller
+import board
+from digitalio import DigitalInOut, Direction, Pull
 import storage_management as sto
 from storage_management import *
 import led
-
-# import modes.super_mode as super_mode
 import modes.bicolor as bicolor
 import modes.einhornkotze as einhornkotze
 import modes.fire as fire
 import modes.ram as ram
 import modes.reading as reading
 import modes.single_color as single_color
-
-# import modes.snow as snow
 import modes.stars as stars
 import modes.tricolor as tricolor
 
 # * VARIABLES
 
 ip = ""
-ip_with_buttons = "192.168.178.221"
-ip_without_buttons = "192.168.178.220"
+ip_with_buttons = "192.168.178.52"
+ip_without_buttons = "192.168.178.51"
 enable_smartphone_search = True
-ip_of_smartphone = ipaddress.ip_address("192.168.178.20")
+ip_of_smartphone = ipaddress.ip_address("192.168.178.49")
 
 modes = []
 modes.append(
@@ -109,10 +102,6 @@ sto.ntp_setup(pool)
 
 if not ip == ip_with_buttons:
     modes.append(ram.RAM("ram", "RAM", "daft.svg"))
-
-# for i in modes:
-#     i.set_html_block(html_mode_block, svg_settings_icon)
-# log("read the files")
 
 
 #  route default static IP
@@ -255,14 +244,12 @@ def serve_config_css(request: HTTPRequest):
         response.send(css_style)
     gc.collect()
 
-
 content_source_dir = os.listdir("www/source")
-
 
 @server.route("/source/")
 @server.route("/source")
 def serve_sources(request: HTTPRequest):
-    # gc.collect()
+    gc.collect()
     # print("source request incoming...")
     if "file" in request.query_params:
         param = request.query_params["file"]
@@ -289,7 +276,7 @@ def serve_sources(request: HTTPRequest):
         ) as response:
             response.send()
 
-    # gc.collect()
+    gc.collect()
 
 
 @server.route("/log")
@@ -317,6 +304,7 @@ def crash(request: HTTPRequest):
         response.send("hehe yeah boy")
     gc.collect()
 
+
 @server.route("/reboot")
 def reboot_request(request: HTTPRequest):
     global reboot_me
@@ -327,6 +315,7 @@ def reboot_request(request: HTTPRequest):
         response.send("I'll see you on the other side...")
     log("❌ going to reboot (request)")
     gc.collect()
+
 
 @server.route("/", method=HTTPMethod.POST)
 def post(request: HTTPRequest):
@@ -382,6 +371,7 @@ def post(request: HTTPRequest):
                 i.input(id, value)
 
     base(request)
+    gc.collect()
 
 
 try:
@@ -443,7 +433,8 @@ last_update_time = 0
 updates_every = 30  # ms
 counter = 0
 
-try:
+# try:
+if True:
     while True:
         # * ### CHECK THE BUTTONS
 
@@ -571,7 +562,7 @@ try:
                 i = i + 1
                 s = s + s
 
-        if get_millis() > 1000*60*60*24 and led.get_brightness() == 0:
+        if get_millis() > 1000 * 60 * 60 * 24 and led.get_brightness() == 0:
             reboot_me = True
             log("❌ going to reboot (timeout)")
 
@@ -585,6 +576,6 @@ try:
         # print(gc.mem_free())
         gc.collect()
 
-except Exception as e:
-    log(e)
-    log("Exiting...")
+# except Exception as e:
+#     log(e)
+#     log("Exiting...")
