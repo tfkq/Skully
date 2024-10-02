@@ -54,7 +54,7 @@ To change the mode/settings, open the IP-address in your browser.
 
 ## Code Structure
 
-*there isn't one. it's quite a mess*
+*there isn't one. it's quite a mess. sry*
 
 
 
